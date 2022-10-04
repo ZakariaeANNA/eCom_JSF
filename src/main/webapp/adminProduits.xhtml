@@ -1,0 +1,162 @@
+<ui:composition 
+	  xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://java.sun.com/jsf/html"
+      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:ui="http://java.sun.com/jsf/facelets"
+      xmlns:p="http://primefaces.org/ui"
+	template="./index.xhtml">
+	
+	<ui:define name="title">
+   		Administration : <ui:insert name="adminTitle">Gestion des Produits</ui:insert>
+   	</ui:define>
+   	
+   <ui:define name="contenu">
+		<h:panelGrid>
+			<p:row>
+				<h:form id="FormTableCategs">
+					<p:growl id="growl" showDetail="true" />
+					<p:dataTable id="tblProduits" var="prod" value="#{adminProduits.allProducts}"
+						resizableColumns="true"
+						editable="true"
+						paginatorTemplate="{CurrentPageReport}  {FirstPageLink} {PreviousPageLink} {PageLinks} {NextPageLink} {LastPageLink} {Exporters}"
+						paginator="true" rows="5" style="margin-bottom:20px"
+						selection="#{adminProduits.selectedProduct}" rowKey="#{prod.idProduit}"
+						emptyMessage="Aucune Produit enregistrée"
+						filteredValue="#{adminProduits.filteredProducts}"
+						widgetVar="prodTable">
+						<f:facet name="{Exporters}">
+							<h:commandLink>
+								<p:graphicImage name="images/excel.png" width="24" />
+								<p:dataExporter type="xls" target="tblProduits" fileName="Produits" />
+							</h:commandLink>
+
+							<h:commandLink>
+								<p:graphicImage name="images/pdf.png" width="24" />
+								<p:dataExporter type="pdf" target="tblProduits" fileName="Produits" />
+							</h:commandLink>
+						</f:facet>
+						<f:facet name="header">Liste des Produits</f:facet>
+						<p:column selectionMode="single"
+							style="width:16px;text-align: center" />
+						<p:column headerText="ID">
+							<h:outputText value="#{prod.idProduit}" />
+						</p:column>
+						<p:column headerText="Designation"
+								filterBy="#{prod.designation}"
+								filterMatchMode="contains">
+							<h:outputText value="#{prod.designation}" />
+						</p:column>
+						<p:column headerText="Prix">
+							<h:outputText value="#{prod.prix}" />
+						</p:column>
+						<p:column headerText="Quantité">
+							<h:outputText value="#{prod.quantite}" />
+						</p:column>
+						<p:column headerText="Catégorie">
+							<h:outputText value="#{prod.categorie.nomCategorie}" />
+						</p:column>
+						<p:column headerText="Photo">
+							<p:graphicImage value="photos/#{prod.photo}" width="24" />
+						</p:column>
+						<f:facet name="footer">
+							<p:commandButton id="editProd" value="Editer"
+							action="#{adminProduits.edit}" update="formEdit"
+								ajax="false" icon="ui-icon-circle-check"/>
+							<p:commandButton id="deleteProd" value="! Supprimer !"
+								action="#{adminProduits.deleteSelectedProduct}" update="growl"
+								ajax="false" icon="ui-icon-circle-minus"/>
+							<p:commandButton id="addProd" value="Ajouter"
+								action="#{adminProduits.prepareAdd}"
+								ajax="false" icon="ui-icon-circle-plus"/>
+						</f:facet>
+						<p:ajax event="rowSelect"/>
+						<p:ajax event="rowUnselect"/>
+					</p:dataTable>
+				</h:form>
+			</p:row>
+			<p:row id="rowEdit" >
+				<h:form id="formEdit" rendered="#{adminProduits.editMode}">
+					<p:panel header="Mise à jour des données">
+						<h:panelGrid columns="2" id="grid">
+							<h:outputLabel value="Designation : *" for="txt_name" />
+							<p:inputText id="txt_name" value="#{adminProduits.selectedProduct.designation}"
+								required="true" />
+							<h:outputLabel value="Prix : *" for="txt_prix" />
+							<p:inputText id="txt_prix" value="#{adminProduits.selectedProduct.prix}"
+									required="true" />
+							<h:outputLabel value="Quantité : *" for="txt_quant" />
+							<p:inputText id="txt_quant" value="#{adminProduits.selectedProduct.quantite}"
+									required="true" />
+							<h:outputLabel value="Categorie : *" for="txt_catUpd" />
+							<h:selectOneMenu 
+								id="txt_catUpd"
+								converter="categorieConverter"
+								value="#{adminProduits.selectedCategorie}" effect="fade">
+								<f:selectItems
+									value="#{adminProduits.allCategories}" 
+									var="categorie"
+									itemLabel="#{categorie.nomCategorie}" 
+									itemValue="#{categorie}"
+								/>
+							</h:selectOneMenu>
+							<h:outputLabel value="Photo : *" for="txt_photoUpd" />
+							<p:fileUpload 
+								id="txt_photoUpd"
+								mode="simple"
+		                      	multiple="false"
+		                      	sizeLimit="5002400" allowTypes="/(\.|\/)(gif|jpe?g|png)$/"
+		                      	value="#{adminProduits.file}"/>
+							<p:commandButton id="btn_cancel" value="Annuler"
+							action="#{adminProduits.cancelUpdate}"  ajax="false"/>
+							<p:commandButton id="btn_update" value="Modifier"
+								action="#{adminProduits.updateProduct}" update="growl" ajax="false"/>
+						</h:panelGrid>
+					</p:panel>
+				</h:form>
+			</p:row>
+			<p:row id="rowNew" >
+				<h:form id="formNew" rendered="#{adminProduits.addMode}" enctype="multipart/form-data">
+					<p:growl id="msgs" />
+					<p:panel header="Ajout d'une Nouvelle Produit">
+						<h:panelGrid columns="2" id="grid">
+							<h:outputLabel value="Designation : *" for="txt_nameAdd" />
+							<p:inputText id="txt_nameAdd" value="#{adminProduits.productToAdd.designation}"
+								required="true" />
+							<h:outputLabel value="Prix : *" for="txt_prixAdd" />
+							<p:inputText id="txt_prixAdd" value="#{adminProduits.productToAdd.prix}"
+									required="true" />
+							<h:outputLabel value="Quantité : *" for="txt_quantAdd" />
+							<p:inputText id="txt_quantAdd" value="#{adminProduits.productToAdd.quantite}"
+									required="true" />
+							<h:outputLabel value="Categorie : *" for="txt_catAdd" />
+							<h:selectOneMenu 
+								id="txt_catAdd"
+								converter="categorieConverter"
+								value="#{adminProduits.selectedCategorie}" effect="fade">
+								<f:selectItems
+									value="#{adminProduits.allCategories}" 
+									var="categorie"
+									itemLabel="#{categorie.nomCategorie}" 
+									itemValue="#{categorie}"
+								/>
+							</h:selectOneMenu>
+							<h:outputLabel value="Photo : *" for="txt_photoAdd" />
+							<p:fileUpload 
+								id="txt_photoAdd"
+								fileUploadListener="#{adminProduits.fileUpload}" 
+								mode="simple" 
+								dragDropSupport="false"  
+           						sizeLimit="1000000" 
+           						fileLimit="1"
+           						allowTypes="/(\.|\/)(gif|jpe?g|png)$/" />
+							<p:commandButton id="btn_cancelAdd" value="Annuler"
+							action="#{adminProduits.cancelAdd}" immediate="true" ajax="false"/>
+							<p:commandButton id="btn_add" value="Ajouter"
+								action="#{adminProduits.addProduct}" ajax="false"/>
+						</h:panelGrid>
+					</p:panel>
+				</h:form>
+			</p:row>
+		</h:panelGrid>
+	</ui:define>
+</ui:composition>
